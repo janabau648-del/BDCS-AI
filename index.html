@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#06101f">
+<title>BDCS AI | Hridoy</title>
+
+<style>
+*{box-sizing:border-box}
+:root{
+ --bg:#06101f;--card:#101e33;--cyan:#00e5ff;
+ --blue:#1677ff;--text:#edf6ff;--muted:#9aabc0;
+}
+body{
+ margin:0;background:radial-gradient(ellipse at top,#10294a,var(--bg) 65%);
+ color:var(--text);font-family:Arial,sans-serif;min-height:100vh;
+}
+header{
+ display:flex;align-items:center;gap:12px;padding:15px;
+ border-bottom:1px solid #233954;position:sticky;top:0;
+ background:#071324ee;backdrop-filter:blur(12px);z-index:2;
+}
+.avatar{
+ width:49px;height:49px;border-radius:50%;object-fit:cover;
+ border:2px solid var(--cyan);
+}
+.brand{flex:1}
+.brand h1{font-size:20px;margin:0;color:var(--cyan)}
+.brand p{font-size:12px;margin:5px 0 0;color:var(--muted)}
+.status{font-size:12px;color:#64f5b0}
+main{max-width:760px;margin:auto;padding:20px 14px 25px}
+.welcome{
+ text-align:center;padding:20px 12px;
+ background:linear-gradient(135deg,#102b49,#101c31);
+ border:1px solid #234568;border-radius:20px;margin-bottom:20px;
+}
+.welcome h2{color:var(--cyan);margin:0 0 10px}
+.welcome p{color:var(--muted);font-size:14px;line-height:1.7}
+.actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+button{
+ border:0;border-radius:12px;padding:12px 15px;
+ background:linear-gradient(135deg,#007bff,#00bcd4);
+ color:white;font-size:14px;font-weight:bold;cursor:pointer;
+}
+button:active{transform:scale(.97)}
+.secondary{background:#1a2d46;border:1px solid #35506c}
+#chat{
+ display:flex;flex-direction:column;gap:13px;
+ min-height:240px;margin-bottom:15px;
+}
+.msg{
+ max-width:88%;padding:13px 15px;border-radius:16px;
+ line-height:1.65;font-size:15px;white-space:pre-wrap;
+ overflow-wrap:anywhere;
+}
+.bot{align-self:flex-start;background:#13243a;border:1px solid #25405e}
+.user{align-self:flex-end;background:#075a91}
+.who{font-size:11px;color:var(--cyan);display:block;margin-bottom:5px}
+.composer{
+ display:flex;gap:8px;padding:10px;background:#0d1b2e;
+ border:1px solid #29415d;border-radius:17px;
+ position:sticky;bottom:8px;
+}
+input{
+ min-width:0;flex:1;background:transparent;border:0;
+ outline:none;color:white;font-size:15px;padding:8px;
+}
+input::placeholder{color:#91a3b9}
+.composer button{padding:11px}
+.note{font-size:12px;color:var(--muted);line-height:1.7;text-align:center}
+footer{text-align:center;padding:22px;color:var(--muted);font-size:12px}
+</style>
+</head>
+
+<body>
+<header>
+ <img class="avatar"
+ src="https://i.ibb.co/d434cfvW/20260811-012231.png"
+ alt="BDCS AI profile"
+ onerror="this.style.display='none'">
+
+ <div class="brand">
+  <h1>BDCS AI</h1>
+  <p>Hridoy's AI Assistant</p>
+ </div>
+
+ <span class="status">● Ready</span>
+</header>
+
+<main>
+ <section class="welcome">
+  <h2>স্বাগতম BDCS AI-তে 🤖</h2>
+  <p>আমি BDCS AI। আমাকে প্রশ্ন করো, বাংলায় কথা বলো অথবা ভয়েস ব্যবহার করে দেখো।</p>
+
+  <div class="actions">
+   <button type="button" onclick="startVoice()">🎙️ কথা বলো</button>
+   <button type="button" class="secondary" onclick="clearChat()">নতুন চ্যাট</button>
+  </div>
+ </section>
+
+ <section id="chat" aria-live="polite">
+  <div class="msg bot">
+   <span class="who">BDCS AI</span>
+   আসসালামু আলাইকুম! 👋
+   আমি BDCS AI। কীভাবে তোমাকে সাহায্য করতে পারি?
+  </div>
+ </section>
+
+ <form class="composer" id="form">
+  <input id="question"
+   placeholder="এখানে প্রশ্ন লেখো..."
+   autocomplete="off"
+   aria-label="তোমার প্রশ্ন">
+  <button type="submit">পাঠাও ➤</button>
+ </form>
+
+ <p class="note" id="voiceStatus">
+  ভয়েস ব্যবহারের জন্য মাইক্রোফোনের অনুমতি লাগতে পারে।
+ </p>
+
+ <p class="note">
+  Demo Version: আসল AI API এখনো সংযুক্ত করা হয়নি।
+ </p>
+</main>
+
+<footer>
+ BDCS AI © 2026<br>
+ Created with ❤️ by Hridoy Bhai
+</footer>
+
+<script>
+"use strict";
+
+const chat = document.getElementById("chat");
+const form = document.getElementById("form");
+const input = document.getElementById("question");
+const voiceStatus = document.getElementById("voiceStatus");
+
+let recognition = null;
+let voiceEnabled = false;
+
+// চ্যাটে মেসেজ দেখানো
+function addMessage(text, type) {
+ const box = document.createElement("div");
+ box.className = "msg " + type;
+
+ const name = document.createElement("span");
+ name.className = "who";
+ name.textContent = type === "user" ? "তুমি" : "BDCS AI";
+
+ box.appendChild(name);
+ box.appendChild(document.createTextNode(text));
+ chat.appendChild(box);
+
+ window.scrollTo({
+  top: document.body.scrollHeight,
+  behavior: "smooth"
+ });
+
+ return box;
+}
+
+// AI-এর কণ্ঠে উত্তর শোনানো
+function speakReply(text) {
+ if (!voiceEnabled || !("speechSynthesis" in window)) return;
+
+ window.speechSynthesis.cancel();
+
+ const speech = new SpeechSynthesisUtterance(text);
+ speech.lang = "bn-BD";
+ speech.rate = 0.95;
+ speech.pitch = 1;
+
+ speech.onend = function() {
+  voiceStatus.textContent = "ভয়েস প্রস্তুত। আবার কথা বলতে পারো।";
+ };
+
+ window.speechSynthesis.speak(speech);
+}
+
+// ডেমো উত্তর
+function getReply(question) {
+ const q = question.toLowerCase().trim();
+
+ // নির্মাতা
+ if (
+  q.includes("who made you") ||
+  q.includes("who created you") ||
+  q.includes("who is your creator") ||
+  q.includes("তোমার নির্মাতা") ||
+  q.includes("তোমার ক্রিয়েটর") ||
+  q.includes("তোমাকে কে বানিয়েছে") ||
+  q.includes("তোমাকে কে তৈরি করেছে") ||
+  /কে.*(বানাইছে|বানিয়েছে|বানিয়েছে|তৈরি করেছে|তৈরি করেছ)/i.test(q)
+ ) {
+  return "আমাকে হৃদয় ভাই তৈরি করেছেন। ❤️ তিনিই BDCS AI-এর নির্মাতা।";
+ }
+
+ // পরিচয়
+ if (
+  q.includes("তুমি কে") ||
+  q.includes("তোমার পরিচয়") ||
+  q.includes("তোমার নাম") ||
+  q.includes("who are you") ||
+  q === "name"
+ ) {
+  return "আমি BDCS AI, হৃদয় ভাইয়ের তৈরি একটি AI সহকারী। ❤️";
+ }
+
+ // সালাম
+ if (q.includes("আসসালামু আলাইকুম")) {
+  return "ওয়ালাইকুম আসসালাম! ❤️ কেমন আছো ভাই? কীভাবে সাহায্য করতে পারি?";
+ }
+
+ // অভিবাদন
+ if (
+  q.includes("হ্যালো") ||
+  q.includes("হাই") ||
+  q.includes("hello") ||
+  q === "hi" ||
+  q.includes("good morning")
+ ) {
+  return "হ্যালো! 😊 BDCS AI-তে তোমাকে স্বাগতম। কী জানতে চাও?";
+ }
+
+ // কুশল বিনিময়
+ if (q.includes("কেমন আছো") || q.includes("কেমন আছেন")) {
+  return "আমি ভালো আছি! ❤️ তুমি কেমন আছো ভাই?";
+ }
+
+ // ধন্যবাদ
+ if (q.includes("ধন্যবাদ") || q.includes("thank you")) {
+  return "তোমাকে স্বাগতম! ❤️ তোমাকে সাহায্য করতে পেরে ভালো লাগছে।";
+ }
+
+ // পরিচিত নির্মাতার নাম
+ if (q.includes("হৃদয় ভাই") || q.includes("hridoy")) {
+  return "হৃদয় ভাই হলেন BDCS AI-এর নির্মাতা। ❤️";
+ }
+
+ // বিদায়
+ if (q.includes("বিদায়") || q.includes("goodbye") || q === "bye") {
+  return "আবার কথা হবে! ❤️ BDCS AI-তে ফিরে এসো।";
+ }
+
+ // ডেমো সংস্করণের সীমাবদ্ধতা
+ return "তোমার প্রশ্নটি পেয়েছি: " + question +
+  "\n\nআমি BDCS AI ❤️ আমাকে হৃদয় ভাই তৈরি করেছেন।" +
+  "\n\nএখনো আসল AI API সংযুক্ত করা হয়নি। তাই এই সংস্করণে সব প্রশ্নের উত্তর দিতে পারি না। আসল AI যুক্ত করলে আরও অনেক প্রশ্নের উত্তর দিতে পারব।";
+}
+
+// মেসেজ পাঠানো — একবারই ইভেন্ট যুক্ত করা হয়েছে
+form.addEventListener("submit", function(event) {
+ event.preventDefault();
+
+ const question = input.value.trim();
+
+ if (!question) {
+  input.focus();
+  return;
+ }
+
+ addMessage(question, "user");
+ input.value = "";
+
+ const reply = getReply(question);
+
+ setTimeout(function() {
+  addMessage(reply, "bot");
+  speakReply(reply);
+ }, 250);
+});
+
+// নতুন চ্যাট
+function clearChat() {
+ if ("speechSynthesis" in window) {
+  window.speechSynthesis.cancel();
+ }
+
+ chat.innerHTML = "";
+
+ addMessage(
+  "নতুন চ্যাট শুরু হয়েছে! ❤️ কী জানতে চাও?",
+  "bot"
+ );
+
+ input.value = "";
+ input.focus();
+}
+
+// মাইক্রোফোন দিয়ে কথা বলা
+function startVoice() {
+ const SpeechRecognition =
+  window.SpeechRecognition ||
+  window.webkitSpeechRecognition;
+
+ if (!SpeechRecognition) {
+  voiceStatus.textContent =
+   "এই ব্রাউজারে ভয়েস ইনপুট সমর্থিত নয়। Chrome-এ চেষ্টা করো।";
+  return;
+ }
+
+ if (recognition) {
+  try {
+   recognition.stop();
+  } catch (error) {}
+ }
+
+ voiceEnabled = true;
+
+ if ("speechSynthesis" in window) {
+  window.speechSynthesis.cancel();
+ }
+
+ recognition = new SpeechRecognition();
+ recognition.lang = "bn-BD";
+ recognition.interimResults = false;
+ recognition.maxAlternatives = 1;
+
+ voiceStatus.textContent = "শুনছি... 🎙️ এখন কথা বলো।";
+
+ recognition.onresult = function(event) {
+  const spokenText = event.results[0][0].transcript;
+
+  input.value = spokenText;
+  voiceStatus.textContent = "তোমার কথা পাওয়া গেছে। উত্তর তৈরি হচ্ছে...";
+
+  form.requestSubmit();
+ };
+
+ recognition.onerror = function(event) {
+  voiceStatus.textContent =
+   event.error === "not-allowed"
+   ? "মাইক্রোফোনের অনুমতি দাও, তারপর আবার চেষ্টা করো।"
+   : "ভয়েস কাজ করেনি। আবার চেষ্টা করো।";
+ };
+
+ recognition.onend = function() {
+  if (voiceStatus.textContent === "শুনছি... 🎙️ এখন কথা বলো।") {
+   voiceStatus.textContent = "কথা শোনা শেষ হয়েছে। আবার চেষ্টা করতে পারো।";
+  }
+ };
+
+ try {
+  recognition.start();
+ } catch (error) {
+  voiceStatus.textContent = "ভয়েস চালু হয়নি। আবার চেষ্টা করো।";
+ }
+}
+</script>
+
+</body>
+</html>
